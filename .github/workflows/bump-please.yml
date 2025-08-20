@@ -35,4 +35,6 @@ jobs:
       uses: chriswoodle/bump-please-action@v1.0.0
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
+        git-committer-name: github-actions[bot]
+        git-committer-email: github-actions[bot]@users.noreply.github.com
     
