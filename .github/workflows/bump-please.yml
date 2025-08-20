@@ -33,6 +33,4 @@ jobs:
                 
     - name: 🤜 Bump Please
       uses: chriswoodle/bump-please-action@v1.0.0
-      with:
-        dry-run: true
     
