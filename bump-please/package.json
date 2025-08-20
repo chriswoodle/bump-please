@@ -4,7 +4,7 @@
   "description": "Stricli command line application",
   "license": "MIT",
   "type": "module",
-  "version": "1.0.1",
+  "version": "1.1.1",
   "files": [
     "dist"
   ],
