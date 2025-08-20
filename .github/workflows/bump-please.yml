@@ -1,0 +1,38 @@
+name: Version Bump
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-bump:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 🏗 Setup repo
+      uses: actions/checkout@v3
+
+    - name: 📦 Enable Corepack
+      run: corepack enable
+
+    - name: 🏗 Setup Node
+      uses: actions/setup-node@v3
+      with:
+        node-version: 22.x
+        cache: yarn
+        
+    - name: 📦 Install Project dependencies
+      run: yarn install --immutable --mode=skip-build
+      
+    - name: 🏗️ Build bump-please-core
+      run: yarn workspace bump-please-core build
+      
+    - name: 🏗️ Build bump-please
+      run: yarn workspace bump-please build
+                
+    - name: 🤜 Bump Please
+      uses: chriswoodle/bump-please-action@v1.0.0
+      with:
+        dry-run: true
+    
