@@ -8,3 +8,9 @@ A powerful CLI tool for managing version bumps.
 yarn install --mode=skip-build
 yarn dlx @yarnpkg/sdks vscode
 ```
+
+## Building and running
+```
+yarn build
+./bump-please/dist/cli.js bump
+```
