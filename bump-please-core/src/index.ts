@@ -57,6 +57,7 @@ export async function bump(flags: BumpCommandFlags) {
     const configFilePath = path.resolve(configFile);
     console.log('configFilePath=', configFilePath)
     const config = BumpPleaseConfig.parse(JSON.parse(fs.readFileSync(configFilePath, "utf8")));
+    console.log('config=', config)
 
     const dryRun = flags.dryRun ?? config.dryRun ?? false;
 
