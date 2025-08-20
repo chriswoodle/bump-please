@@ -204,10 +204,7 @@ export async function bump(flags: BumpCommandFlags) {
         console.log("Skipping git writes");
         return;
     }
-
-    console.log('Pushing new tag...')
-    await exec(`git tag -a ${nextTag} -m "${releaseNotes}"`)
-
+  
     const gitCommitterName = flags.gitCommitterName ?? config.gitCommitterName ?? env.GIT_COMMITTER_NAME;
     const gitCommitterEmail = flags.gitCommitterEmail ?? config.gitCommitterEmail ?? env.GIT_COMMITTER_EMAIL;
 
@@ -221,21 +218,19 @@ export async function bump(flags: BumpCommandFlags) {
     const githubAuth = flags.githubToken ?? config.githubToken ?? env.GITHUB_TOKEN ?? env.GH_TOKEN;
     console.log('githubAuth=', githubAuth)
     if (!githubAuth) {
-        console.error("No GitHub token found");
-        return;
+        console.warn("No GitHub token found, not setting remote url");
+    } else {
+        const repoAuthedUrl = `https://${githubAuth}@${repoHost}/${repoName}.git`
+        await exec(`git remote set-url origin ${repoAuthedUrl}`)
     }
-
-    const repoAuthedUrl = `https://${githubAuth}@${repoHost}/${repoName}.git`
-    await exec(`git remote set-url origin ${repoAuthedUrl}`)
 
     // Prepare git commit and push
     // Hint: PAT may be replaced with a SSH deploy token
     // https://stackoverflow.com/questions/26372417/github-oauth2-token-how-to-restrict-access-to-read-a-single-private-repo
-    console.log('git push')
     const releaseMessage = `chore(release): ${nextVersion} [skip ci]`
     await exec(`git add -A .`)
-    await exec(`git commit -am ${releaseMessage}`)
-    await exec(`git tag -a ${nextTag} HEAD -m ${releaseMessage}`)
+    await exec(`git commit -am "${releaseMessage}"`)
+    await exec(`git tag -a ${nextTag} HEAD -m "${releaseMessage}"`)
     await exec(`git push --follow-tags origin HEAD:refs/heads/${branch}`)
     // if (PUSH_MAJOR_TAG) {
     //     const majorTag = nextTag.split('.')[0]

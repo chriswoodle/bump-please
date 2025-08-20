@@ -1,5 +1,4 @@
 {
-    "disableGitWrites": true,
     "packages": [
         {
             "path": "./bump-please"
