@@ -1,0 +1,11 @@
+{
+    "disableGitWrites": true,
+    "packages": [
+        {
+            "path": "./bump-please"
+        },
+        {
+            "path": "./bump-please-core"
+        }
+    ]
+}
