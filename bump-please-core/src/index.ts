@@ -153,10 +153,8 @@ export async function bump(flags: BumpCommandFlags) {
 
     console.log('nextVersion=', nextVersion)
 
-
-    const oldestCommitHash = semanticChanges[semanticChanges.length - 1]?.short;
     const nextTag = 'v' + nextVersion
-    const releaseDiffRef = `## [${nextVersion}](${repoPublicUrl}/compare/${lastTag ?? oldestCommitHash ?? GIT_EMPTY_TREE_HASH}...${nextTag}) (${new Date().toISOString().slice(0, 10)})`
+    const releaseDiffRef = lastTag ? `## [${nextVersion}](${repoPublicUrl}/compare/${lastTag}...${nextTag}) (${new Date().toISOString().slice(0, 10)})` : `## [${nextVersion}](${repoPublicUrl}/commits/${nextTag}) (${new Date().toISOString().slice(0, 10)})`
     const releaseDetails = Object.values(semanticChanges
         .reduce((acc, { group, change, short, hash }) => {
             const { commits } = acc[group] || (acc[group] = { commits: [], group })
