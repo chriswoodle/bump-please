@@ -14,3 +14,7 @@ yarn dlx @yarnpkg/sdks vscode
 yarn build
 ./bump-please/dist/cli.js bump
 ```
+
+### Credits:
+
+* https://github.com/semrel-extra/zx-semrel

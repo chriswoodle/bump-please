@@ -3,6 +3,15 @@
   "version": "1.1.1",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "license": "MIT",
+  "author": "Chris Woodle",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chriswoodle/bump-please"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -b -v",
     "clean": "tsc -b --clean",

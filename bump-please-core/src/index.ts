@@ -204,7 +204,8 @@ export async function bump(flags: BumpCommandFlags) {
         console.log("Skipping git writes");
         return;
     }
-  
+
+    console.log('Running git commands...')
     const gitCommitterName = flags.gitCommitterName ?? config.gitCommitterName ?? env.GIT_COMMITTER_NAME;
     const gitCommitterEmail = flags.gitCommitterEmail ?? config.gitCommitterEmail ?? env.GIT_COMMITTER_EMAIL;
 
@@ -232,9 +233,6 @@ export async function bump(flags: BumpCommandFlags) {
     await exec(`git commit -am "${releaseMessage}"`)
     await exec(`git tag -a ${nextTag} HEAD -m "${releaseMessage}"`)
     await exec(`git push --follow-tags origin HEAD:refs/heads/${branch}`)
-    // if (PUSH_MAJOR_TAG) {
-    //     const majorTag = nextTag.split('.')[0]
-    //     await exec(`git tag -fa ${majorTag} HEAD -m ${releaseMessage}`)
-    //     await exec(`git push --follow-tags -f origin ${majorTag}`)
-    // }
+
+    console.log('Done!')
 }
