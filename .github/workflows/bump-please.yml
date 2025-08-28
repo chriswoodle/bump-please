@@ -38,13 +38,12 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: 🔑 Set Yarn Auth Token
+      run: yarn config set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
+
     - name: 📦 Publish bump-please-core
       run: yarn workspace bump-please-core npm publish --access public
-      env:
-        NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
 
     - name: 📦 Publish bump-please
       run: yarn workspace bump-please npm publish --access public
-      env:
-        NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
     
