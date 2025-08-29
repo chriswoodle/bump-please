@@ -39,7 +39,7 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: 🔑 Set Yarn Auth Token
-      run: yarn config set npmAuthIdent ${{ secrets.NPM_TOKEN }}
+      run: yarn config set npmAuthToken ${{ secrets.NPM_TOKEN }}
 
     - name: 📦 Publish bump-please-core
       run: yarn workspace bump-please-core npm publish --access public
