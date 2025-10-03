@@ -136,10 +136,10 @@ export async function bump(flags: BumpCommandFlags) {
         }
         if (!lastTag) {
             console.log('No last tag - using root package.json version')
-            return rootPkgJson.version || '1.0.0'
+            lastTag = rootPkgJson.version || '0.0.0'
         }
 
-        const [, c1, c2, c3] = semanticTagPattern.exec(lastTag) as any;
+        const [, c1, c2, c3] = semanticTagPattern.exec(lastTag!) as any;
         if (releaseType === 'major') {
             return `${-~c1}.0.0`
         }
