@@ -21,6 +21,8 @@ const BumpPleaseConfig = z.object({
     gitCommitterEmail: z.string().optional(),
     packages: z.array(z.object({
         path: z.string(),
+        jsonFileName: z.string().optional(),
+        jsonPropertyPath: z.string().optional(),
     })).optional(),
 });
 
@@ -37,7 +39,6 @@ export interface BumpCommandFlags {
 }
 
 export async function bump(flags: BumpCommandFlags) {
-
     const env = cleanEnv(process.env, {
         DRY_RUN: bool({ desc: "Dry run", default: undefined }),
         CONFIG_FILE: str({ desc: "Path to the config file to use", default: undefined }),
@@ -49,7 +50,6 @@ export async function bump(flags: BumpCommandFlags) {
         GIT_COMMITTER_EMAIL: str({ desc: "The email of the committer", default: undefined }),
         ROOT_PACKAGE_JSON: str({ desc: "Path to the root package.json file", default: undefined }),
     });
-
 
     console.log("bump command");
     const configFile = flags.configFile ?? env.CONFIG_FILE ?? DEFAULT_CONFIG_FILE;
@@ -171,18 +171,27 @@ export async function bump(flags: BumpCommandFlags) {
 
 
     // Validate packages
+    const validationErrors: string[] = [];
     for (const pkg of config.packages ?? []) {
         const pkgPath = path.resolve(pkg.path);
-        if (!fs.existsSync(path.resolve(pkgPath, "package.json"))) {
-            console.error(`Package ${pkgPath} does not have a package.json file`);
+        const jsonFileName = pkg.jsonFileName ?? "package.json";
+        const jsonFilePath = path.resolve(pkgPath, jsonFileName);
+        if (!fs.existsSync(jsonFilePath)) {
+            const message = `Package ${pkgPath} does not have a ${jsonFileName} file`;
+            console.error(message);
+            validationErrors.push(message);
             continue;
         }
 
         const pkgJson = JSON.parse(fs.readFileSync(path.resolve(pkgPath, "package.json"), "utf8"));
         if (!pkgJson.version) {
-            console.error(`Package ${pkgPath} does not have a version`);
+            validationErrors.push(`Package ${pkgPath} does not have a version`);
             continue;
         }
+    }
+    if (validationErrors.length > 0) {
+        console.error('Validation errors:', validationErrors.join('\n'));
+        throw new Error('Validation errors');
     }
 
     if (dryRun) {
@@ -195,9 +204,22 @@ export async function bump(flags: BumpCommandFlags) {
 
     for (const pkg of config.packages ?? []) {
         const pkgPath = path.resolve(pkg.path);
-        const pkgJson = JSON.parse(fs.readFileSync(path.resolve(pkgPath, "package.json"), "utf8"));
-        pkgJson.version = nextVersion;
-        fs.writeFileSync(path.resolve(pkgPath, "package.json"), JSON.stringify(pkgJson, null, 2) + '\n');
+        const jsonFileName = pkg.jsonFileName ?? "package.json";
+        const jsonFilePath = path.resolve(pkgPath, jsonFileName);
+        const jsonContents = JSON.parse(fs.readFileSync(jsonFilePath, "utf8"));
+        const jsonPropertyPath = pkg.jsonPropertyPath ?? "version";
+        const jsonProperty = jsonPropertyPath.split('.').reduce((obj, key) => obj?.[key], jsonContents);
+        if (!jsonProperty) {
+            const message = `Package ${pkgPath} does not have a ${jsonPropertyPath} property`;
+            console.error(message);
+            throw new Error(message);
+        }
+        // Set nested property using dot notation
+        const pathParts = jsonPropertyPath.split('.');
+        const lastKey = pathParts.pop()!;
+        const parentObject = pathParts.reduce((obj, key) => obj[key], jsonContents);
+        parentObject[lastKey] = nextVersion;
+        fs.writeFileSync(jsonFilePath, JSON.stringify(jsonContents, null, 2) + '\n');
     }
 
     const disableGitWrites = flags.disableGitWrites ?? config.disableGitWrites ?? env.DISABLE_GIT_WRITES ?? false;

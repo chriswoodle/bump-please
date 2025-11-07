@@ -15,14 +15,29 @@
   "scripts": {
     "build": "tsc -b -v",
     "clean": "tsc -b --clean",
-    "trace": "tsc --traceResolution"
+    "trace": "tsc --traceResolution",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
     "envalid": "^8.1.0",
     "zod": "^4.0.17"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^22",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.5",
     "typescript": "^5.6.3"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/src"
+    ],
+    "testMatch": [
+      "**/*.spec.ts"
+    ]
   }
 }

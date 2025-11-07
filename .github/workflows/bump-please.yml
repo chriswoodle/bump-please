@@ -32,6 +32,9 @@ jobs:
       
     - name: 🏗️ Build packages
       run: yarn build
+
+    - name: 🏗️ Test packages
+      run: yarn test
       
     - name: 🤜 Bump Please
       uses: chriswoodle/bump-please-action@v1.0.1
