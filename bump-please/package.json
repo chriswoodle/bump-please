@@ -21,9 +21,7 @@
   },
   "scripts": {
     "prebuild": "tsc -p src/tsconfig.json",
-    "build": "tsup",
-    "prepublishOnly": "npm run build",
-    "postinstall": "bump-please install"
+    "build": "tsup"
   },
   "tsup": {
     "entry": [

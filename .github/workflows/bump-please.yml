@@ -1,8 +1,8 @@
 name: Version Bump
 
 permissions:
-    id-token: write  # Required for OIDC
-    contents: write
+  id-token: write  # Required for OIDC
+  contents: write
 
 on:
   push:
@@ -19,18 +19,18 @@ jobs:
       with:
         fetch-depth: 0
         fetch-tags: true
-
+    
     - name: 📦 Enable Corepack
       run: corepack enable
 
     - name: 🏗 Setup Node
       uses: actions/setup-node@v6
       with:
-        node-version: 24.x
+        node-version: 24
         cache: yarn
         
     - name: 📦 Install Project dependencies
-      run: yarn install --immutable --mode=skip-build
+      run: yarn install --immutable
       
     - name: 🏗️ Build packages
       run: yarn build
