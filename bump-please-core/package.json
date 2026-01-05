@@ -39,5 +39,8 @@
     "testMatch": [
       "**/*.spec.ts"
     ]
+  },
+  "publishConfig": {
+    "provenance": true
   }
 }

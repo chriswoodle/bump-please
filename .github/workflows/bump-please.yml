@@ -1,6 +1,7 @@
 name: Version Bump
 
 permissions:
+    id-token: write  # Required for OIDC
     contents: write
 
 on:
@@ -14,17 +15,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: 🏗 Setup repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6.0.1
       with:
         fetch-depth: 0
+        fetch-tags: true
 
     - name: 📦 Enable Corepack
       run: corepack enable
 
     - name: 🏗 Setup Node
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v6
       with:
-        node-version: 22.x
+        node-version: 24.x
         cache: yarn
         
     - name: 📦 Install Project dependencies
@@ -40,9 +42,6 @@ jobs:
       uses: chriswoodle/bump-please-action@v1.0.1
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: 🔑 Set Yarn Auth Token
-      run: yarn config set npmAuthToken ${{ secrets.NPM_TOKEN }}
 
     - name: 📦 Publish bump-please-core
       run: yarn workspace bump-please-core npm publish --access public
