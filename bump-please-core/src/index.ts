@@ -6,24 +6,35 @@ import * as fs from 'node:fs';
 
 const exec = util.promisify(childProcess.exec);
 
-import { z } from "zod";
-import { bool, cleanEnv, str } from "envalid";
+import { z } from "zod/mini";
 
 const GIT_EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
 const DEFAULT_CONFIG_FILE = "bump-please-config.json";
 
+const BumpPleaseEnvSchema = z.object({
+    DRY_RUN: z.nullable(z.optional(z.boolean())),
+    CONFIG_FILE: z.nullable(z.optional(z.string())),
+    DISABLE_GIT_WRITES: z.nullable(z.optional(z.boolean())),
+    GITHUB_TOKEN: z.nullable(z.optional(z.string())),
+    GH_TOKEN: z.nullable(z.optional(z.string())),
+    GIT_BRANCH: z.nullable(z.optional(z.string())),
+    GIT_COMMITTER_NAME: z.nullable(z.optional(z.string())),
+    GIT_COMMITTER_EMAIL: z.nullable(z.optional(z.string())),
+    ROOT_PACKAGE_JSON: z.nullable(z.optional(z.string())),
+});
+
 const BumpPleaseConfig = z.object({
-    dryRun: z.boolean().optional(),
-    disableGitWrites: z.boolean().optional(),
-    githubToken: z.string().optional(),
-    gitBranch: z.string().optional(),
-    gitCommitterName: z.string().optional(),
-    gitCommitterEmail: z.string().optional(),
-    packages: z.array(z.object({
+    dryRun: z.nullable(z.optional(z.boolean())),
+    disableGitWrites: z.nullable(z.optional(z.boolean())),
+    githubToken: z.nullable(z.optional(z.string())),
+    gitBranch: z.nullable(z.optional(z.string())),
+    gitCommitterName: z.nullable(z.optional(z.string())),
+    gitCommitterEmail: z.nullable(z.optional(z.string())),
+    packages: z.nullable(z.optional(z.array(z.object({
         path: z.string(),
-        jsonFileName: z.string().optional(),
-        jsonPropertyPath: z.string().optional(),
-    })).optional(),
+        jsonFileName: z.nullable(z.optional(z.string())),
+        jsonPropertyPath: z.nullable(z.optional(z.string())),
+    })))),
 });
 
 export interface BumpCommandFlags {
@@ -39,17 +50,7 @@ export interface BumpCommandFlags {
 }
 
 export async function bump(flags: BumpCommandFlags) {
-    const env = cleanEnv(process.env, {
-        DRY_RUN: bool({ desc: "Dry run", default: undefined }),
-        CONFIG_FILE: str({ desc: "Path to the config file to use", default: undefined }),
-        DISABLE_GIT_WRITES: bool({ desc: "Disable git writes", default: undefined }),
-        GITHUB_TOKEN: str({ desc: "The GitHub token to use", default: undefined }),
-        GH_TOKEN: str({ desc: "The GitHub token to use", default: undefined }),
-        GIT_BRANCH: str({ desc: "The branch to use", default: undefined }),
-        GIT_COMMITTER_NAME: str({ desc: "The name of the committer", default: undefined }),
-        GIT_COMMITTER_EMAIL: str({ desc: "The email of the committer", default: undefined }),
-        ROOT_PACKAGE_JSON: str({ desc: "Path to the root package.json file", default: undefined }),
-    });
+    const env = BumpPleaseEnvSchema.parse(process.env);
 
     console.log("bump command");
     const configFile = flags.configFile ?? env.CONFIG_FILE ?? DEFAULT_CONFIG_FILE;

@@ -214,7 +214,7 @@ If no previous tag exists, the tool uses the version from your root `package.jso
 
 ## Development
 ```
-yarn install --mode=skip-build
+yarn
 yarn dlx @yarnpkg/sdks vscode
 ```
 
