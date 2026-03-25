@@ -8,8 +8,11 @@ function parseBooleanInput(input: string): boolean | undefined {
     return lowerInput === 'true' || lowerInput === '1' || lowerInput === 'yes' || lowerInput === 'on';
 }
 
+export const ACTION_VERSION = '__ACTION_VERSION__'
+
 export async function run(): Promise<void> {
     try {
+        core.info(`bump-please-action v${ACTION_VERSION}`)
         const flags: BumpCommandFlags = {
             ...(core.getInput("dry-run") ? { dryRun: parseBooleanInput(core.getInput("dry-run")) } : {}),
             ...(core.getInput("config-file") ? { configFile: core.getInput("config-file") } : {}),

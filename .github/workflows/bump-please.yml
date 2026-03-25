@@ -148,7 +148,7 @@ jobs:
 
         # Configure git to inject the token via credential helper (never written to disk)
         TEMP_DIR="$(mktemp -d)"
-        git init "$TEMP_DIR"
+        git init -b main "$TEMP_DIR"
         cd "$TEMP_DIR"
         git remote add origin "https://github.com/chriswoodle/bump-please-action.git"
         git config credential.helper '!f() { echo "password=${GITHUB_TOKEN}"; }; f'
