@@ -1,6 +1,6 @@
 # Bump Please 🤜💥🤛
 
-A powerful CLI tool for managing version bumps using conventional commits.
+A CLI tool and GitHub Action that automatically bumps versions in `package.json` and other JSON files based on conventional commits. Supports monorepos.
 
 ## GitHub Action
 
@@ -24,7 +24,6 @@ Use Bump Please as a GitHub Action in your CI/CD workflow:
 name: Version Bump
 
 permissions:
-  id-token: write
   contents: write
 
 on:
