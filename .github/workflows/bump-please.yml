@@ -70,9 +70,6 @@ jobs:
     - name: 🏗️ Build action
       run: yarn build:action
 
-    - name: 📦 Stage action dist
-      run: git add action/dist/
-
     - name: 🤜 Bump Please
       uses: ./action
       with:
@@ -112,3 +109,67 @@ jobs:
 
     - name: 📦 Publish bump-please
       run: cd bump-please && yarn npm publish --access public
+
+  publish-action:
+    needs: build-and-test
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - name: 🏗 Setup repo
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+    - name: 📦 Enable Corepack
+      run: corepack enable
+
+    - name: 🏗 Setup Node
+      uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+      with:
+        node-version: 24
+        cache: yarn
+
+    - name: 📦 Install Project dependencies
+      run: yarn install --immutable
+
+    - name: 🏗️ Build packages
+      run: yarn build
+
+    - name: 🏗️ Build action
+      run: yarn build:action
+
+    - name: 📦 Push action to bump-please-action repo
+      env:
+        GITHUB_TOKEN: ${{ secrets.ACTION_REPO_TOKEN }}
+      run: |
+        # Extract version and major tag from the release (e.g. v1.5.0 -> v1)
+        VERSION="${GITHUB_REF_NAME}"
+        MAJOR="$(echo "$VERSION" | grep -oP '^v\d+')"
+
+        # Copy only the files needed for the published action
+        TEMP_DIR="$(mktemp -d)"
+        cp action/action.yml "$TEMP_DIR/"
+        cp -r action/dist "$TEMP_DIR/"
+        cp LICENSE "$TEMP_DIR/"
+        cp README.md "$TEMP_DIR/"
+
+        # Initialize a fresh repo and point it at bump-please-action
+        cd "$TEMP_DIR"
+        git init
+        git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/chriswoodle/bump-please-action.git"
+        git checkout -b main
+
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        # Commit the built action and tag with both exact and major versions
+        git add -A
+        git commit -m "Release ${VERSION}"
+        git tag -a "$VERSION" -m "Release ${VERSION}"
+        git tag -fa "$MAJOR" -m "Update $MAJOR tag to $VERSION"
+
+        # Force-push main and major tag (replaces previous contents entirely)
+        # Push the exact version tag (immutable, for users who pin by SHA)
+        git push origin main --force
+        git push origin "$VERSION"
+        git push origin "$MAJOR" --force

@@ -4,58 +4,7 @@ A CLI tool and GitHub Action that automatically bumps versions in `package.json`
 
 ## GitHub Action
 
-Use Bump Please as a GitHub Action in your CI/CD workflow:
-
-```yaml
-- name: Bump Please
-  uses: chriswoodle/bump-please/action@<commit-sha> # v1.x.x
-  with:
-    github-token: ${{ secrets.GITHUB_TOKEN }}
-```
-
-> **Security:** Always pin actions to a full commit SHA instead of a mutable tag like `@v1`. Tags can be moved to point to different code, but commit SHAs are immutable. Find the SHA for a release tag with:
-> ```bash
-> git ls-remote --tags https://github.com/chriswoodle/bump-please.git "v*"
-> ```
-
-### Full Workflow Example
-
-```yaml
-name: Version Bump
-
-permissions:
-  contents: write
-
-on:
-  push:
-    branches: [ main ]
-
-jobs:
-  bump:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@<commit-sha> # v4
-      with:
-        fetch-depth: 0
-        fetch-tags: true
-
-    - uses: chriswoodle/bump-please/action@<commit-sha> # v1.x.x
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-```
-
-### Action Inputs
-
-| Input | Description | Required |
-|---|---|---|
-| `github-token` | GitHub token for git operations | No |
-| `dry-run` | Preview changes without applying them | No |
-| `config-file` | Path to bump-please config file | No |
-| `disable-git-writes` | Skip git commits, tags, and pushes | No |
-| `git-branch` | Branch to push to | No |
-| `git-committer-name` | Name for git commits (default: `github-actions[bot]`) | No |
-| `git-committer-email` | Email for git commits | No |
-| `root-package-json` | Path to root package.json | No |
+Bump Please is also available as a GitHub Action. See [bump-please-action](https://github.com/chriswoodle/bump-please-action) for usage and documentation.
 
 ## CLI Installation
 

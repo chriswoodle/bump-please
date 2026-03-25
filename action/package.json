@@ -16,7 +16,7 @@
     "node": ">=24.0.0"
   },
   "dependencies": {
-    "@actions/core": "^2.0.1",
+    "@actions/core": "^3.0.0",
     "bump-please-core": "workspace:*"
   },
   "devDependencies": {
