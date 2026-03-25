@@ -1,0 +1,36 @@
+name: Bump Please
+description: Runs bump-please to bump the version of a package.json files
+
+branding:
+  icon: arrow-up
+  color: green
+
+inputs:
+  dry-run: # id of input
+    description: Whether to run in dry-run mode
+    required: false
+  config-file: # id of input
+    description: The path to the bump-please config file
+    required: false
+  disable-git-writes: # id of input
+    description: Whether to disable git writes
+    required: false
+  github-token: # id of input
+    description: The GitHub token to use for git operations
+    required: false
+  git-branch: # id of input
+    description: The branch to use for git operations
+    required: false
+  git-committer-name: # id of input
+    description: The name to use for git operations
+    required: false
+  git-committer-email: # id of input
+    description: The email to use for git operations
+    required: false
+  root-package-json: # id of input
+    description: The path to the root package.json file
+    required: false
+
+runs:
+  using: node24
+  main: dist/index.js

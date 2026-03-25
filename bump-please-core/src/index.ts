@@ -4,11 +4,10 @@ import util from 'node:util';
 import * as childProcess from 'node:child_process';
 import * as fs from 'node:fs';
 
-const exec = util.promisify(childProcess.exec);
+const execFile = util.promisify(childProcess.execFile);
 
 import { z } from "zod/mini";
 
-const GIT_EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
 const DEFAULT_CONFIG_FILE = "bump-please-config.json";
 
 const BumpPleaseEnvSchema = z.object({
@@ -66,13 +65,13 @@ export async function bump(flags: BumpCommandFlags) {
         console.log("Dry run");
     }
 
-    const originUrl = (await exec(`git config --get remote.origin.url`).catch(error => {
+    const originUrl = (await execFile('git', ['config', '--get', 'remote.origin.url']).catch(error => {
         console.error("No origin url found, are you in a git repository?");
         console.error(error);
         throw error;
     })).stdout.trim()
 
-    const branch = flags.gitBranch ?? config.gitBranch ?? (await exec(`git branch --show-current`)).stdout.trim() ?? 'main'
+    const branch = flags.gitBranch ?? config.gitBranch ?? (await execFile('git', ['branch', '--show-current'])).stdout.trim() ?? 'main'
     const [, , repoHost, repoName] = originUrl.replace(':', '/').replace(/\.git/, '').match(/.+(@|\/\/)([^/]+)\/(.+)$/) as any
     const repoPublicUrl = `https://${repoHost}/${repoName}`
 
@@ -87,11 +86,11 @@ export async function bump(flags: BumpCommandFlags) {
 
     const rootPackageJsonPath = path.resolve(flags.rootPackageJson ?? env.ROOT_PACKAGE_JSON ?? './package.json')
     const rootPkgJson = JSON.parse(fs.readFileSync(rootPackageJsonPath, 'utf8'))
-    const tags = (await exec(`git tag -l --sort=-v:refname`)).stdout.split('\n').map(tag => tag.trim())
+    const tags = (await execFile('git', ['tag', '-l', '--sort=-v:refname'])).stdout.split('\n').map(tag => tag.trim())
     console.log('tags=', tags)
     const lastTag = tags.find(tag => semanticTagPattern.test(tag))
-    const commitsRange = lastTag ? `${(await exec(`git rev-list -1 ${lastTag}`)).stdout.trim()}..HEAD` : 'HEAD'
-    const newCommits = (await exec(`git log --format=+++%s__%b__%h__%H ${commitsRange}`).catch(error => {
+    const commitsRange = lastTag ? `${(await execFile('git', ['rev-list', '-1', lastTag])).stdout.trim()}..HEAD` : 'HEAD'
+    const newCommits = (await execFile('git', ['log', '--format=+++%s__%b__%h__%H', commitsRange]).catch(error => {
         console.error("Error getting commits, are you in a working tree?");
         console.error(error);
         throw error;
@@ -200,8 +199,12 @@ export async function bump(flags: BumpCommandFlags) {
         return
     }
 
+    // Track modified files for targeted staging
+    const modifiedFiles: string[] = [];
+
     rootPkgJson.version = nextVersion;
     fs.writeFileSync(rootPackageJsonPath, JSON.stringify(rootPkgJson, null, 2) + '\n');
+    modifiedFiles.push(rootPackageJsonPath);
 
     for (const pkg of config.packages ?? []) {
         const pkgPath = path.resolve(pkg.path);
@@ -221,6 +224,7 @@ export async function bump(flags: BumpCommandFlags) {
         const parentObject = pathParts.reduce((obj, key) => obj[key], jsonContents);
         parentObject[lastKey] = nextVersion;
         fs.writeFileSync(jsonFilePath, JSON.stringify(jsonContents, null, 2) + '\n');
+        modifiedFiles.push(jsonFilePath);
     }
 
     const disableGitWrites = flags.disableGitWrites ?? config.disableGitWrites ?? env.DISABLE_GIT_WRITES ?? false;
@@ -235,29 +239,26 @@ export async function bump(flags: BumpCommandFlags) {
     const gitCommitterEmail = flags.gitCommitterEmail ?? config.gitCommitterEmail ?? env.GIT_COMMITTER_EMAIL;
 
     if (gitCommitterName) {
-        await exec(`git config user.name ${gitCommitterName}`)
+        await execFile('git', ['config', 'user.name', gitCommitterName])
     }
     if (gitCommitterEmail) {
-        await exec(`git config user.email ${gitCommitterEmail}`)
+        await execFile('git', ['config', 'user.email', gitCommitterEmail])
     }
 
     const githubAuth = flags.githubToken ?? config.githubToken ?? env.GITHUB_TOKEN ?? env.GH_TOKEN;
-    console.log('githubAuth=', githubAuth)
     if (!githubAuth) {
         console.warn("No GitHub token found, not setting remote url");
     } else {
         const repoAuthedUrl = `https://${githubAuth}@${repoHost}/${repoName}.git`
-        await exec(`git remote set-url origin ${repoAuthedUrl}`)
+        await execFile('git', ['remote', 'set-url', 'origin', repoAuthedUrl])
     }
 
-    // Prepare git commit and push
-    // Hint: PAT may be replaced with a SSH deploy token
-    // https://stackoverflow.com/questions/26372417/github-oauth2-token-how-to-restrict-access-to-read-a-single-private-repo
+    // Stage only the files we modified
     const releaseMessage = `chore(release): ${nextVersion} [skip ci]`
-    await exec(`git add -A .`)
-    await exec(`git commit -am "${releaseMessage}"`)
-    await exec(`git tag -a ${nextTag} HEAD -m "${releaseMessage}"`)
-    await exec(`git push --follow-tags origin HEAD:refs/heads/${branch}`)
+    await execFile('git', ['add', '--', ...modifiedFiles])
+    await execFile('git', ['commit', '-m', releaseMessage])
+    await execFile('git', ['tag', '-a', nextTag, 'HEAD', '-m', releaseMessage])
+    await execFile('git', ['push', '--follow-tags', 'origin', `HEAD:refs/heads/${branch}`])
 
     console.log('Done!')
 }

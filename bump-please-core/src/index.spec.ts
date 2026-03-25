@@ -3,19 +3,20 @@ import * as childProcess from 'node:child_process';
 import util from 'node:util';
 
 // Create a mock exec function
-const mockExec = jest.fn();
+const mockExecFile = jest.fn();
 
 // Mock dependencies before importing the module
 jest.mock('node:fs');
 
 jest.mock('node:child_process', () => ({
     exec: jest.fn(),
+    execFile: jest.fn(),
 }));
 
 jest.mock('node:util', () => ({
     __esModule: true,
     default: {
-        promisify: jest.fn(() => mockExec),
+        promisify: jest.fn(() => mockExecFile),
     },
 }));
 
@@ -43,7 +44,7 @@ describe('bump', () => {
         mockReadFileSync.mockReset();
         mockWriteFileSync.mockReset();
         mockExistsSync.mockReset();
-        mockExec.mockReset();
+        mockExecFile.mockReset();
 
         // Default environment
         process.env = {};
@@ -62,7 +63,7 @@ describe('bump', () => {
                 .mockReturnValueOnce(JSON.stringify(mockConfig))
                 .mockReturnValueOnce(JSON.stringify(rootPkgJson));
 
-            mockExec
+            mockExecFile
                 .mockResolvedValueOnce({ stdout: 'https://github.com/user/repo.git\n' }) // origin url
                 .mockResolvedValueOnce({ stdout: 'main\n' }) // branch
                 .mockResolvedValueOnce({ stdout: 'v1.0.0\n' }) // tags
@@ -72,7 +73,7 @@ describe('bump', () => {
             await bump({ dryRun: true });
 
             expect(mockWriteFileSync).not.toHaveBeenCalled();
-            expect(mockExec).not.toHaveBeenCalledWith(expect.stringContaining('git add'));
+            expect(mockExecFile).not.toHaveBeenCalledWith('git', expect.arrayContaining(['add']));
         });
     });
 
@@ -85,7 +86,7 @@ describe('bump', () => {
                 .mockReturnValueOnce(JSON.stringify(mockConfig))
                 .mockReturnValueOnce(JSON.stringify(rootPkgJson));
 
-            mockExec
+            mockExecFile
                 .mockResolvedValueOnce({ stdout: 'https://github.com/user/repo.git\n' })
                 .mockResolvedValueOnce({ stdout: 'main\n' })
                 .mockResolvedValueOnce({ stdout: 'v1.0.0\n' })
@@ -97,7 +98,7 @@ describe('bump', () => {
             await bump({ dryRun: true });
 
             // Major version bump should be calculated
-            expect(mockExec).toHaveBeenCalled();
+            expect(mockExecFile).toHaveBeenCalled();
         });
 
         it('should detect minor version bump from feat prefix', async () => {
@@ -108,7 +109,7 @@ describe('bump', () => {
                 .mockReturnValueOnce(JSON.stringify(mockConfig))
                 .mockReturnValueOnce(JSON.stringify(rootPkgJson));
 
-            mockExec
+            mockExecFile
                 .mockResolvedValueOnce({ stdout: 'https://github.com/user/repo.git\n' })
                 .mockResolvedValueOnce({ stdout: 'main\n' })
                 .mockResolvedValueOnce({ stdout: 'v1.0.0\n' })
@@ -120,7 +121,7 @@ describe('bump', () => {
             await bump({ dryRun: true });
 
             // Minor version bump should be calculated
-            expect(mockExec).toHaveBeenCalled();
+            expect(mockExecFile).toHaveBeenCalled();
         });
 
         it('should detect patch version bump from fix prefix', async () => {
@@ -131,7 +132,7 @@ describe('bump', () => {
                 .mockReturnValueOnce(JSON.stringify(mockConfig))
                 .mockReturnValueOnce(JSON.stringify(rootPkgJson));
 
-            mockExec
+            mockExecFile
                 .mockResolvedValueOnce({ stdout: 'https://github.com/user/repo.git\n' })
                 .mockResolvedValueOnce({ stdout: 'main\n' })
                 .mockResolvedValueOnce({ stdout: 'v1.0.0\n' })
@@ -143,7 +144,7 @@ describe('bump', () => {
             await bump({ dryRun: true });
 
             // Patch version bump should be calculated
-            expect(mockExec).toHaveBeenCalled();
+            expect(mockExecFile).toHaveBeenCalled();
         });
 
         it('should return early when no semantic changes are detected', async () => {
@@ -154,7 +155,7 @@ describe('bump', () => {
                 .mockReturnValueOnce(JSON.stringify(mockConfig))
                 .mockReturnValueOnce(JSON.stringify(rootPkgJson));
 
-            mockExec
+            mockExecFile
                 .mockResolvedValueOnce({ stdout: 'https://github.com/user/repo.git\n' })
                 .mockResolvedValueOnce({ stdout: 'main\n' })
                 .mockResolvedValueOnce({ stdout: 'v1.0.0\n' })
@@ -179,7 +180,7 @@ describe('bump', () => {
                 .mockReturnValueOnce(JSON.stringify(mockConfig))
                 .mockReturnValueOnce(JSON.stringify(rootPkgJson));
 
-            mockExec
+            mockExecFile
                 .mockResolvedValueOnce({ stdout: 'https://github.com/user/repo.git\n' })
                 .mockResolvedValueOnce({ stdout: 'main\n' })
                 .mockResolvedValueOnce({ stdout: 'v1.2.3\n' })
@@ -191,7 +192,7 @@ describe('bump', () => {
             await bump({ dryRun: true });
 
             // Version should be calculated from tag
-            expect(mockExec).toHaveBeenCalled();
+            expect(mockExecFile).toHaveBeenCalled();
         });
 
         it('should use root package.json version when no last tag exists', async () => {
@@ -202,7 +203,7 @@ describe('bump', () => {
                 .mockReturnValueOnce(JSON.stringify(mockConfig))
                 .mockReturnValueOnce(JSON.stringify(rootPkgJson));
 
-            mockExec
+            mockExecFile
                 .mockResolvedValueOnce({ stdout: 'https://github.com/user/repo.git\n' })
                 .mockResolvedValueOnce({ stdout: 'main\n' })
                 .mockResolvedValueOnce({ stdout: '\n' }) // no tags
@@ -213,7 +214,7 @@ describe('bump', () => {
             await bump({ dryRun: true });
 
             // Version should be calculated from package.json when no tag exists
-            expect(mockExec).toHaveBeenCalled();
+            expect(mockExecFile).toHaveBeenCalled();
         });
     });
 
@@ -226,7 +227,7 @@ describe('bump', () => {
                 .mockReturnValueOnce(JSON.stringify(mockConfig))
                 .mockReturnValueOnce(JSON.stringify(rootPkgJson));
 
-            mockExec
+            mockExecFile
                 .mockResolvedValueOnce({ stdout: 'https://github.com/user/repo.git\n' })
                 .mockResolvedValueOnce({ stdout: 'main\n' })
                 .mockResolvedValueOnce({ stdout: 'v1.0.0\n' })
@@ -267,7 +268,7 @@ describe('bump', () => {
                 .mockReturnValueOnce(true) // package1/package.json exists (validation)
                 .mockReturnValueOnce(true); // package2/custom.json exists (validation)
 
-            mockExec
+            mockExecFile
                 .mockResolvedValueOnce({ stdout: 'https://github.com/user/repo.git\n' })
                 .mockResolvedValueOnce({ stdout: 'main\n' })
                 .mockResolvedValueOnce({ stdout: 'v1.0.0\n' })
@@ -308,7 +309,7 @@ describe('bump', () => {
             mockExistsSync
                 .mockReturnValueOnce(false); // package1/package.json doesn't exist
 
-            mockExec
+            mockExecFile
                 .mockResolvedValueOnce({ stdout: 'https://github.com/user/repo.git\n' })
                 .mockResolvedValueOnce({ stdout: 'main\n' })
                 .mockResolvedValueOnce({ stdout: 'v1.0.0\n' })
@@ -335,7 +336,7 @@ describe('bump', () => {
             mockExistsSync
                 .mockReturnValueOnce(true); // package1/package.json exists
 
-            mockExec
+            mockExecFile
                 .mockResolvedValueOnce({ stdout: 'https://github.com/user/repo.git\n' })
                 .mockResolvedValueOnce({ stdout: 'main\n' })
                 .mockResolvedValueOnce({ stdout: 'v1.0.0\n' })
@@ -367,7 +368,7 @@ describe('bump', () => {
                 .mockReturnValueOnce(false) // package1/package.json doesn't exist
                 .mockReturnValueOnce(true); // package2/package.json exists
 
-            mockExec
+            mockExecFile
                 .mockResolvedValueOnce({ stdout: 'https://github.com/user/repo.git\n' })
                 .mockResolvedValueOnce({ stdout: 'main\n' })
                 .mockResolvedValueOnce({ stdout: 'v1.0.0\n' })
@@ -389,7 +390,7 @@ describe('bump', () => {
                 .mockReturnValueOnce(JSON.stringify(mockConfig))
                 .mockReturnValueOnce(JSON.stringify(rootPkgJson));
 
-            mockExec
+            mockExecFile
                 .mockResolvedValueOnce({ stdout: 'https://github.com/user/repo.git\n' })
                 .mockResolvedValueOnce({ stdout: 'main\n' })
                 .mockResolvedValueOnce({ stdout: 'v1.0.0\n' })
@@ -400,8 +401,8 @@ describe('bump', () => {
 
             await bump({ disableGitWrites: true });
 
-            expect(mockExec).not.toHaveBeenCalledWith(expect.stringContaining('git add'));
-            expect(mockExec).not.toHaveBeenCalledWith(expect.stringContaining('git commit'));
+            expect(mockExecFile).not.toHaveBeenCalledWith('git', expect.arrayContaining(['add']));
+            expect(mockExecFile).not.toHaveBeenCalledWith('git', expect.arrayContaining(['commit']));
         });
 
         it('should perform git operations when git writes are enabled', async () => {
@@ -412,7 +413,7 @@ describe('bump', () => {
                 .mockReturnValueOnce(JSON.stringify(mockConfig))
                 .mockReturnValueOnce(JSON.stringify(rootPkgJson));
 
-            mockExec
+            mockExecFile
                 .mockResolvedValueOnce({ stdout: 'https://github.com/user/repo.git\n' })
                 .mockResolvedValueOnce({ stdout: 'main\n' })
                 .mockResolvedValueOnce({ stdout: 'v1.0.0\n' })
@@ -429,10 +430,10 @@ describe('bump', () => {
 
             await bump({ githubToken: 'test-token' });
 
-            expect(mockExec).toHaveBeenCalledWith(expect.stringContaining('git add -A .'));
-            expect(mockExec).toHaveBeenCalledWith(expect.stringContaining('git commit'));
-            expect(mockExec).toHaveBeenCalledWith(expect.stringContaining('git tag'));
-            expect(mockExec).toHaveBeenCalledWith(expect.stringContaining('git push'));
+            expect(mockExecFile).toHaveBeenCalledWith('git', expect.arrayContaining(['add']));
+            expect(mockExecFile).toHaveBeenCalledWith('git', expect.arrayContaining(['commit']));
+            expect(mockExecFile).toHaveBeenCalledWith('git', expect.arrayContaining(['tag']));
+            expect(mockExecFile).toHaveBeenCalledWith('git', expect.arrayContaining(['push']));
         });
 
         it('should set git committer name and email when provided', async () => {
@@ -443,7 +444,7 @@ describe('bump', () => {
                 .mockReturnValueOnce(JSON.stringify(mockConfig))
                 .mockReturnValueOnce(JSON.stringify(rootPkgJson));
 
-            mockExec
+            mockExecFile
                 .mockResolvedValueOnce({ stdout: 'https://github.com/user/repo.git\n' })
                 .mockResolvedValueOnce({ stdout: 'main\n' })
                 .mockResolvedValueOnce({ stdout: 'v1.0.0\n' })
@@ -465,8 +466,8 @@ describe('bump', () => {
                 githubToken: 'test-token'
             });
 
-            expect(mockExec).toHaveBeenCalledWith(expect.stringContaining('git config user.name Test User'));
-            expect(mockExec).toHaveBeenCalledWith(expect.stringContaining('git config user.email test@example.com'));
+            expect(mockExecFile).toHaveBeenCalledWith('git', ['config', 'user.name', 'Test User']);
+            expect(mockExecFile).toHaveBeenCalledWith('git', ['config', 'user.email', 'test@example.com']);
         });
 
         it('should warn when no GitHub token is provided', async () => {
@@ -477,7 +478,7 @@ describe('bump', () => {
                 .mockReturnValueOnce(JSON.stringify(mockConfig))
                 .mockReturnValueOnce(JSON.stringify(rootPkgJson));
 
-            mockExec
+            mockExecFile
                 .mockResolvedValueOnce({ stdout: 'https://github.com/user/repo.git\n' })
                 .mockResolvedValueOnce({ stdout: 'main\n' })
                 .mockResolvedValueOnce({ stdout: 'v1.0.0\n' })
@@ -493,7 +494,7 @@ describe('bump', () => {
             await bump({});
 
             // Should complete without GitHub token
-            expect(mockExec).toHaveBeenCalled();
+            expect(mockExecFile).toHaveBeenCalled();
         });
     });
 
@@ -506,7 +507,7 @@ describe('bump', () => {
                 .mockReturnValueOnce(JSON.stringify(mockConfig))
                 .mockReturnValueOnce(JSON.stringify(rootPkgJson));
 
-            mockExec.mockRejectedValueOnce(new Error('No origin url'));
+            mockExecFile.mockRejectedValueOnce(new Error('No origin url'));
 
             await expect(bump({})).rejects.toThrow();
         });
@@ -519,7 +520,7 @@ describe('bump', () => {
                 .mockReturnValueOnce(JSON.stringify(mockConfig))
                 .mockReturnValueOnce(JSON.stringify(rootPkgJson));
 
-            mockExec
+            mockExecFile
                 .mockResolvedValueOnce({ stdout: 'https://github.com/user/repo.git\n' })
                 .mockResolvedValueOnce({ stdout: 'main\n' })
                 .mockResolvedValueOnce({ stdout: 'v1.0.0\n' })
@@ -539,7 +540,7 @@ describe('bump', () => {
                 .mockReturnValueOnce(JSON.stringify(mockConfig))
                 .mockReturnValueOnce(JSON.stringify(rootPkgJson));
 
-            mockExec
+            mockExecFile
                 .mockResolvedValueOnce({ stdout: 'https://github.com/user/repo.git\n' })
                 .mockResolvedValueOnce({ stdout: 'main\n' })
                 .mockResolvedValueOnce({ stdout: 'v1.0.0\n' })
@@ -564,7 +565,7 @@ describe('bump', () => {
                 .mockReturnValueOnce(JSON.stringify(mockConfig))
                 .mockReturnValueOnce(JSON.stringify(rootPkgJson));
 
-            mockExec
+            mockExecFile
                 .mockResolvedValueOnce({ stdout: 'https://github.com/user/repo.git\n' })
                 .mockResolvedValueOnce({ stdout: 'v1.0.0\n' })
                 .mockResolvedValueOnce({ stdout: 'abc123\n' })
@@ -580,7 +581,7 @@ describe('bump', () => {
 
             await bump({ gitBranch: 'develop', githubToken: 'test-token' });
 
-            expect(mockExec).toHaveBeenCalledWith(expect.stringContaining('refs/heads/develop'));
+            expect(mockExecFile).toHaveBeenCalledWith('git', expect.arrayContaining(['HEAD:refs/heads/develop']));
         });
     });
 });

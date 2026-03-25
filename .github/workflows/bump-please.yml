@@ -1,45 +1,79 @@
 name: Version Bump
 
-permissions:
-  id-token: write  # Required for OIDC
-  contents: write
-
 on:
   push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
 
 jobs:
-  build-and-bump:
+  build-and-test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
     - name: 🏗 Setup repo
-      uses: actions/checkout@v6.0.1
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       with:
         fetch-depth: 0
         fetch-tags: true
-    
+
     - name: 📦 Enable Corepack
       run: corepack enable
 
     - name: 🏗 Setup Node
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
       with:
         node-version: 24
         cache: yarn
-        
+
     - name: 📦 Install Project dependencies
       run: yarn install --immutable
-      
+
     - name: 🏗️ Build packages
       run: yarn build
 
+    - name: 🏗️ Build action
+      run: yarn build:action
+
     - name: 🏗️ Test packages
       run: yarn test
-      
+
+  bump-and-publish:
+    needs: build-and-test
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+    - name: 🏗 Setup repo
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      with:
+        fetch-depth: 0
+        fetch-tags: true
+
+    - name: 📦 Enable Corepack
+      run: corepack enable
+
+    - name: 🏗 Setup Node
+      uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+      with:
+        node-version: 24
+        cache: yarn
+
+    - name: 📦 Install Project dependencies
+      run: yarn install --immutable
+
+    - name: 🏗️ Build packages
+      run: yarn build
+
+    - name: 🏗️ Build action
+      run: yarn build:action
+
+    - name: 📦 Stage action dist
+      run: git add action/dist/
+
     - name: 🤜 Bump Please
-      uses: chriswoodle/bump-please-action@v1.0.1
+      uses: ./action
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -48,4 +82,3 @@ jobs:
 
     - name: 📦 Publish bump-please
       run: cd bump-please && yarn npm publish --access public
-    

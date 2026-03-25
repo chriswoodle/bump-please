@@ -4,11 +4,13 @@
   "private": true,
   "scripts": {
     "build": "yarn workspace bump-please-core build && yarn workspace bump-please build",
+    "build:action": "yarn workspace action bundle",
     "test": "yarn workspace bump-please-core test"
   },
   "workspaces": [
     "bump-please",
-    "bump-please-core"
+    "bump-please-core",
+    "action"
   ],
   "packageManager": "yarn@4.12.0",
   "devDependencies": {
