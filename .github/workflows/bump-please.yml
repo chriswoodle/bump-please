@@ -146,30 +146,35 @@ jobs:
         VERSION="${GITHUB_REF_NAME}"
         MAJOR="$(echo "$VERSION" | grep -oP '^v\d+')"
 
-        # Copy only the files needed for the published action
+        # Clone the action repo to preserve commit history
         TEMP_DIR="$(mktemp -d)"
-        cp action/action.yml "$TEMP_DIR/"
-        cp -r action/dist "$TEMP_DIR/"
-        cp LICENSE "$TEMP_DIR/"
-        cp README.md "$TEMP_DIR/"
-
-        # Initialize a fresh repo and point it at bump-please-action
+        git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/chriswoodle/bump-please-action.git" "$TEMP_DIR"
         cd "$TEMP_DIR"
-        git init
-        git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/chriswoodle/bump-please-action.git"
-        git checkout -b main
 
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
 
-        # Commit the built action and tag with both exact and major versions
+        # Replace action files with the newly built output
+        rm -rf dist/
+        cp "${GITHUB_WORKSPACE}/action/action.yml" .
+        cp -r "${GITHUB_WORKSPACE}/action/dist" .
+        cp "${GITHUB_WORKSPACE}/LICENSE" .
+        cp "${GITHUB_WORKSPACE}/action/README.md" .
+
+        # Commit and tag with both exact and major versions
         git add -A
         git commit -m "Release ${VERSION}"
         git tag -a "$VERSION" -m "Release ${VERSION}"
         git tag -fa "$MAJOR" -m "Update $MAJOR tag to $VERSION"
 
-        # Force-push main and major tag (replaces previous contents entirely)
-        # Push the exact version tag (immutable, for users who pin by SHA)
-        git push origin main --force
+        # Push commit and version tags
+        git push origin main
         git push origin "$VERSION"
         git push origin "$MAJOR" --force
+
+        # Create a GitHub Release so it appears on the Marketplace
+        gh release create "$VERSION" \
+          --repo chriswoodle/bump-please-action \
+          --title "$VERSION" \
+          --notes "See [bump-please $VERSION](https://github.com/chriswoodle/bump-please/releases/tag/$VERSION) for details." \
+          --latest
