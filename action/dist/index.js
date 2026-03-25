@@ -46971,7 +46971,6 @@ function requireDist () {
 	const node_util_1 = __importDefault(__require$f());
 	const childProcess = __importStar(__require$1());
 	const fs = __importStar(__require());
-	node_util_1.default.promisify(childProcess.exec);
 	const execFile = node_util_1.default.promisify(childProcess.execFile);
 	const mini_1 = /*@__PURE__*/ requireMini();
 	const DEFAULT_CONFIG_FILE = "bump-please-config.json";
