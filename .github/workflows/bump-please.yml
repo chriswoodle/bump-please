@@ -146,13 +146,15 @@ jobs:
         VERSION="${GITHUB_REF_NAME}"
         MAJOR="$(echo "$VERSION" | grep -oP '^v\d+')"
 
-        # Clone the action repo to preserve commit history
+        # Configure git to inject the token via credential helper (never written to disk)
         TEMP_DIR="$(mktemp -d)"
-        git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/chriswoodle/bump-please-action.git" "$TEMP_DIR"
+        git init "$TEMP_DIR"
         cd "$TEMP_DIR"
-
+        git remote add origin "https://github.com/chriswoodle/bump-please-action.git"
+        git config credential.helper '!f() { echo "password=${GITHUB_TOKEN}"; }; f'
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
+        git pull origin main
 
         # Replace action files with the newly built output
         rm -rf dist/
