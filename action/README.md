@@ -85,3 +85,28 @@ jobs:
 | `git-committer-name` | Name for git commits (default: `github-actions[bot]`) | No |
 | `git-committer-email` | Email for git commits | No |
 | `root-package-json` | Path to root package.json | No |
+
+## Outputs
+
+| Output | Description |
+|---|---|
+| `commit-sha` | The git SHA of the version bump commit |
+| `version` | The new version that was bumped to |
+
+Outputs are only set when a version bump is performed. If no semantic changes are detected (or when running in dry-run / disable-git-writes mode), the outputs will be empty.
+
+### Using outputs
+
+```yaml
+- name: 🤜 Bump Please
+  id: bump
+  uses: chriswoodle/bump-please-action@<commit-sha> # v1
+  with:
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+
+- name: Use bump outputs
+  if: steps.bump.outputs.commit-sha
+  run: |
+    echo "Bumped to version ${{ steps.bump.outputs.version }}"
+    echo "Commit SHA: ${{ steps.bump.outputs.commit-sha }}"
+```

@@ -6,6 +6,8 @@ A CLI tool and GitHub Action that automatically bumps versions in `package.json`
 
 Bump Please is also available as a GitHub Action. See [bump-please-action](https://github.com/chriswoodle/bump-please-action) for usage and documentation.
 
+The action exposes `commit-sha` and `version` as outputs, so downstream steps can reference the bump commit.
+
 ## CLI Installation
 
 ```bash

@@ -421,19 +421,21 @@ describe('bump', () => {
                 .mockResolvedValueOnce({
                     stdout: '+++feat: new feature__body__abc123__def456\n'
                 })
-                .mockResolvedValueOnce({ stdout: '' }) // git config user.name (optional)
                 .mockResolvedValueOnce({ stdout: '' }) // git remote set-url
                 .mockResolvedValueOnce({ stdout: '' }) // git add
                 .mockResolvedValueOnce({ stdout: '' }) // git commit
+                .mockResolvedValueOnce({ stdout: 'a1b2c3d4e5f6\n' }) // git rev-parse HEAD
                 .mockResolvedValueOnce({ stdout: '' }) // git tag
                 .mockResolvedValueOnce({ stdout: '' }); // git push
 
-            await bump({ githubToken: 'test-token' });
+            const result = await bump({ githubToken: 'test-token' });
 
             expect(mockExecFile).toHaveBeenCalledWith('git', expect.arrayContaining(['add']));
             expect(mockExecFile).toHaveBeenCalledWith('git', expect.arrayContaining(['commit']));
+            expect(mockExecFile).toHaveBeenCalledWith('git', ['rev-parse', 'HEAD']);
             expect(mockExecFile).toHaveBeenCalledWith('git', expect.arrayContaining(['tag']));
             expect(mockExecFile).toHaveBeenCalledWith('git', expect.arrayContaining(['push']));
+            expect(result).toEqual({ commitSha: 'a1b2c3d4e5f6', version: '1.1.0' });
         });
 
         it('should set git committer name and email when provided', async () => {
@@ -457,6 +459,7 @@ describe('bump', () => {
                 .mockResolvedValueOnce({ stdout: '' }) // git remote set-url
                 .mockResolvedValueOnce({ stdout: '' }) // git add
                 .mockResolvedValueOnce({ stdout: '' }) // git commit
+                .mockResolvedValueOnce({ stdout: 'abc123\n' }) // git rev-parse HEAD
                 .mockResolvedValueOnce({ stdout: '' }) // git tag
                 .mockResolvedValueOnce({ stdout: '' }); // git push
 
@@ -488,6 +491,7 @@ describe('bump', () => {
                 })
                 .mockResolvedValueOnce({ stdout: '' }) // git add
                 .mockResolvedValueOnce({ stdout: '' }) // git commit
+                .mockResolvedValueOnce({ stdout: 'abc123\n' }) // git rev-parse HEAD
                 .mockResolvedValueOnce({ stdout: '' }) // git tag
                 .mockResolvedValueOnce({ stdout: '' }); // git push
 
@@ -576,6 +580,7 @@ describe('bump', () => {
                 .mockResolvedValueOnce({ stdout: '' }) // git remote
                 .mockResolvedValueOnce({ stdout: '' }) // git add
                 .mockResolvedValueOnce({ stdout: '' }) // git commit
+                .mockResolvedValueOnce({ stdout: 'abc123\n' }) // git rev-parse HEAD
                 .mockResolvedValueOnce({ stdout: '' }) // git tag
                 .mockResolvedValueOnce({ stdout: '' }); // git push
 

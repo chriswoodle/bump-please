@@ -26,7 +26,13 @@ export async function run(): Promise<void> {
 
         const result = await bump(flags);
 
-        core.info(`Result: ${result}`);
+        if (result) {
+            core.setOutput('commit-sha', result.commitSha);
+            core.setOutput('version', result.version);
+            core.info(`Bumped to ${result.version} (${result.commitSha})`);
+        } else {
+            core.info('No version bump was performed.');
+        }
     } catch (error) {
         if (error instanceof Error) core.setFailed(error.message)
     }

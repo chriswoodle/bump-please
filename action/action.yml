@@ -5,6 +5,12 @@ branding:
   icon: arrow-up
   color: green
 
+outputs:
+  commit-sha:
+    description: The git SHA of the version bump commit
+  version:
+    description: The new version that was bumped to
+
 inputs:
   dry-run: # id of input
     description: Whether to run in dry-run mode

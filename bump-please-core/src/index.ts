@@ -48,7 +48,12 @@ export interface BumpCommandFlags {
     rootPackageJson?: string;
 }
 
-export async function bump(flags: BumpCommandFlags) {
+export interface BumpResult {
+    commitSha: string;
+    version: string;
+}
+
+export async function bump(flags: BumpCommandFlags): Promise<BumpResult | undefined> {
     const env = BumpPleaseEnvSchema.parse(process.env);
 
     console.log("bump command");
@@ -257,8 +262,11 @@ export async function bump(flags: BumpCommandFlags) {
     const releaseMessage = `chore(release): ${nextVersion} [skip ci]`
     await execFile('git', ['add', '--', ...modifiedFiles])
     await execFile('git', ['commit', '-m', releaseMessage])
+    const { stdout: commitSha } = await execFile('git', ['rev-parse', 'HEAD'])
     await execFile('git', ['tag', '-a', nextTag, 'HEAD', '-m', releaseMessage])
     await execFile('git', ['push', '--follow-tags', 'origin', `HEAD:refs/heads/${branch}`])
 
     console.log('Done!')
+
+    return { commitSha: commitSha.trim(), version: nextVersion! }
 }
