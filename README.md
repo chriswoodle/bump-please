@@ -95,6 +95,12 @@ For example, if you have both `feat:` and `fix:` commits, the version will be bu
 
 ### Configuration
 
+Configuration is optional. Bump Please resolves config in this order and logs which source it used:
+
+1. **`bump-please-config.json`** in the project root (or the path passed via `--config-file` / `CONFIG_FILE`).
+2. **`bumpPleaseConfig`** key in your root `package.json` — used only when the config file above is missing.
+3. **Empty config (`{}`)** — used when neither of the above is present. The root `package.json` version is still bumped; no additional package files are updated.
+
 Create a `bump-please-config.json` file in your project root:
 
 ```json
@@ -109,6 +115,23 @@ Create a `bump-please-config.json` file in your project root:
   ]
 }
 ```
+
+Or, to avoid an extra file, embed the same config under a `bumpPleaseConfig` key in your root `package.json`:
+
+```json
+{
+  "name": "my-app",
+  "version": "1.0.0",
+  "bumpPleaseConfig": {
+    "packages": [
+      { "path": "./packages/package-a" },
+      { "path": "./packages/package-b" }
+    ]
+  }
+}
+```
+
+If both a `bump-please-config.json` file and a `bumpPleaseConfig` key exist, **the file wins** — the `package.json` key is ignored.
 
 #### Configuration Options
 

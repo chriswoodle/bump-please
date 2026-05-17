@@ -561,6 +561,129 @@ describe('bump', () => {
             );
         });
 
+        it('should default to empty config when bump-please-config.json is missing and no bumpPleaseConfig in package.json', async () => {
+            const rootPkgJson = { version: '1.0.0' };
+            const enoent: any = new Error('ENOENT: no such file or directory');
+            enoent.code = 'ENOENT';
+
+            mockReadFileSync
+                .mockImplementationOnce(() => { throw enoent; }) // missing config file
+                .mockReturnValueOnce(JSON.stringify(rootPkgJson)); // root package.json
+
+            mockExecFile
+                .mockResolvedValueOnce({ stdout: 'https://github.com/user/repo.git\n' })
+                .mockResolvedValueOnce({ stdout: 'main\n' })
+                .mockResolvedValueOnce({ stdout: 'v1.0.0\n' })
+                .mockResolvedValueOnce({ stdout: 'abc123\n' })
+                .mockResolvedValueOnce({
+                    stdout: '+++feat: new feature__body__abc123__def456\n'
+                });
+
+            await bump({ dryRun: true });
+
+            // No throw, no writes (dry run); empty config means no extra packages
+            expect(mockWriteFileSync).not.toHaveBeenCalled();
+        });
+
+        it('should fall back to bumpPleaseConfig in package.json when bump-please-config.json is missing', async () => {
+            const rootPkgJson = {
+                version: '1.0.0',
+                bumpPleaseConfig: { dryRun: true, packages: [] }
+            };
+            const enoent: any = new Error('ENOENT: no such file or directory');
+            enoent.code = 'ENOENT';
+
+            mockReadFileSync
+                .mockImplementationOnce(() => { throw enoent; }) // missing config file
+                .mockReturnValueOnce(JSON.stringify(rootPkgJson)); // root package.json
+
+            mockExecFile
+                .mockResolvedValueOnce({ stdout: 'https://github.com/user/repo.git\n' })
+                .mockResolvedValueOnce({ stdout: 'main\n' })
+                .mockResolvedValueOnce({ stdout: 'v1.0.0\n' })
+                .mockResolvedValueOnce({ stdout: 'abc123\n' })
+                .mockResolvedValueOnce({
+                    stdout: '+++feat: new feature__body__abc123__def456\n'
+                });
+
+            // Note: no dryRun flag passed; dryRun should come from bumpPleaseConfig
+            await bump({});
+
+            expect(mockWriteFileSync).not.toHaveBeenCalled();
+        });
+
+        it('should pick up packages from package.json bumpPleaseConfig fallback', async () => {
+            const rootPkgJson = {
+                version: '1.0.0',
+                bumpPleaseConfig: { packages: [{ path: './package1' }] }
+            };
+            const pkg1Json = { version: '1.0.0' };
+            const enoent: any = new Error('ENOENT: no such file or directory');
+            enoent.code = 'ENOENT';
+
+            mockReadFileSync
+                .mockImplementationOnce(() => { throw enoent; }) // missing config file
+                .mockReturnValueOnce(JSON.stringify(rootPkgJson)) // root package.json
+                .mockReturnValueOnce(JSON.stringify(pkg1Json)) // package1/package.json (validation)
+                .mockReturnValueOnce(JSON.stringify(pkg1Json)); // package1/package.json (update)
+
+            mockExistsSync.mockReturnValueOnce(true); // package1/package.json exists
+
+            mockExecFile
+                .mockResolvedValueOnce({ stdout: 'https://github.com/user/repo.git\n' })
+                .mockResolvedValueOnce({ stdout: 'main\n' })
+                .mockResolvedValueOnce({ stdout: 'v1.0.0\n' })
+                .mockResolvedValueOnce({ stdout: 'abc123\n' })
+                .mockResolvedValueOnce({
+                    stdout: '+++feat: new feature__body__abc123__def456\n'
+                });
+
+            await bump({ disableGitWrites: true });
+
+            expect(mockWriteFileSync).toHaveBeenCalledWith(
+                expect.stringContaining(path.resolve('package1', 'package.json')),
+                expect.stringContaining('"version": "1.1.0"')
+            );
+        });
+
+        it('should prefer bump-please-config.json over bumpPleaseConfig key in package.json when both exist', async () => {
+            const mockConfig = { dryRun: true, packages: [] };
+            const rootPkgJson = {
+                version: '1.0.0',
+                bumpPleaseConfig: { packages: [{ path: './should-not-be-used' }] }
+            };
+
+            mockReadFileSync
+                .mockReturnValueOnce(JSON.stringify(mockConfig)) // config file wins
+                .mockReturnValueOnce(JSON.stringify(rootPkgJson));
+
+            mockExecFile
+                .mockResolvedValueOnce({ stdout: 'https://github.com/user/repo.git\n' })
+                .mockResolvedValueOnce({ stdout: 'main\n' })
+                .mockResolvedValueOnce({ stdout: 'v1.0.0\n' })
+                .mockResolvedValueOnce({ stdout: 'abc123\n' })
+                .mockResolvedValueOnce({
+                    stdout: '+++feat: new feature__body__abc123__def456\n'
+                });
+
+            // dryRun from config file should win; if fallback had been used,
+            // it would have tried to validate ./should-not-be-used and thrown.
+            await expect(bump({})).resolves.not.toThrow();
+            expect(mockWriteFileSync).not.toHaveBeenCalled();
+        });
+
+        it('should propagate non-ENOENT errors when reading config file', async () => {
+            const rootPkgJson = { version: '1.0.0' };
+            const eacces: any = new Error('EACCES: permission denied');
+            eacces.code = 'EACCES';
+
+            mockReadFileSync
+                .mockImplementationOnce(() => { throw eacces; })
+                .mockReturnValueOnce(JSON.stringify(rootPkgJson));
+
+            await expect(bump({})).rejects.toThrow('EACCES');
+        });
+
         it('should use git branch from flags', async () => {
             const mockConfig = { packages: [] };
             const rootPkgJson = { version: '1.0.0' };

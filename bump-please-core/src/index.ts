@@ -61,7 +61,31 @@ export async function bump(flags: BumpCommandFlags): Promise<BumpResult | undefi
     console.log('configFile=', configFile)
     const configFilePath = path.resolve(configFile);
     console.log('configFilePath=', configFilePath)
-    const config = BumpPleaseConfig.parse(JSON.parse(fs.readFileSync(configFilePath, "utf8")));
+
+    const rootPackageJsonPath = path.resolve(flags.rootPackageJson ?? env.ROOT_PACKAGE_JSON ?? './package.json')
+
+    let rawConfig: unknown;
+    let configMissing = false;
+    try {
+        rawConfig = JSON.parse(fs.readFileSync(configFilePath, "utf8"));
+        console.log(`Loaded config from ${configFilePath}`);
+    } catch (error: any) {
+        if (error?.code !== 'ENOENT') throw error;
+        configMissing = true;
+    }
+
+    const rootPkgJson = JSON.parse(fs.readFileSync(rootPackageJsonPath, 'utf8'))
+
+    if (configMissing) {
+        if (rootPkgJson.bumpPleaseConfig) {
+            console.log(`Loaded config from "bumpPleaseConfig" key in ${rootPackageJsonPath}`);
+            rawConfig = rootPkgJson.bumpPleaseConfig;
+        } else {
+            console.log(`No config found (looked for ${configFilePath} and "bumpPleaseConfig" key in ${rootPackageJsonPath}); using empty config`);
+            rawConfig = {};
+        }
+    }
+    const config = BumpPleaseConfig.parse(rawConfig);
     console.log('config=', config)
 
     const dryRun = flags.dryRun ?? config.dryRun ?? false;
@@ -89,8 +113,6 @@ export async function bump(flags: BumpCommandFlags): Promise<BumpResult | undefi
         { group: 'BREAKING CHANGES', releaseType: 'major', keywords: ['BREAKING CHANGE', 'BREAKING CHANGES'] },
     ];
 
-    const rootPackageJsonPath = path.resolve(flags.rootPackageJson ?? env.ROOT_PACKAGE_JSON ?? './package.json')
-    const rootPkgJson = JSON.parse(fs.readFileSync(rootPackageJsonPath, 'utf8'))
     const tags = (await execFile('git', ['tag', '-l', '--sort=-v:refname'])).stdout.split('\n').map(tag => tag.trim())
     console.log('tags=', tags)
     const lastTag = tags.find(tag => semanticTagPattern.test(tag))
